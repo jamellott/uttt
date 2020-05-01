@@ -6,6 +6,8 @@
 - vue.js
 - {{ input transitive dependencies here }}
 
+- https://echo.labstack.com/cookbook/websocket
+
 # Server
 
 ## Build

@@ -2,7 +2,10 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo"
@@ -27,10 +30,30 @@ func ValidatePath(path string) (string, error) {
 }
 
 func main() {
+	cfg, err := initializeConfig()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error loading config")
+		panic(err)
+	}
+
+	server := buildServer(cfg)
+	listenAddress := fmt.Sprintf("%v:%v", cfg.Host, strconv.Itoa(cfg.Port))
+	if cfg.AcmeTLS {
+		server.StartAutoTLS(listenAddress)
+	} else {
+		server.Start(listenAddress)
+	}
+}
+
+// buildServer constructs an echo instance with the routes setup
+// according to the configuration given
+func buildServer(cfg *config) *echo.Echo {
 	server := echo.New()
 
-	server.Use(middleware.Logger())
 	server.Use(middleware.Recover())
+	if cfg.RequestLogs {
+		server.Use(middleware.Logger())
+	}
 
 	server.GET("/", func(e echo.Context) error {
 		return e.Redirect(301, "/ui/index.html")
@@ -47,5 +70,5 @@ func main() {
 		return e.File(validatedPath)
 	})
 
-	server.Start("0.0.0.0:8081")
+	return server
 }
