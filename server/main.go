@@ -10,8 +10,6 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-
-	"github.com/heartles/uttt/server/game"
 )
 
 // ErrValidationFailed is returned if the path provided was not valid
@@ -38,8 +36,6 @@ func main() {
 		panic(err)
 	}
 
-	_ = game.NewGame("X", "O")
-
 	server := buildServer(cfg)
 	listenAddress := fmt.Sprintf("%v:%v", cfg.Host, strconv.Itoa(cfg.Port))
 	if cfg.AcmeTLS {
@@ -53,6 +49,7 @@ func main() {
 // according to the configuration given
 func buildServer(cfg *config) *echo.Echo {
 	server := echo.New()
+	socketServer := NewSocketServer(cfg)
 
 	server.Use(middleware.Recover())
 	if cfg.RequestLogs {
@@ -72,6 +69,12 @@ func buildServer(cfg *config) *echo.Echo {
 		}
 
 		return e.File(validatedPath)
+	})
+
+	server.GET("/socket", func(e echo.Context) error {
+		socketServer.Handle(e.Response(), e.Request())
+
+		return nil
 	})
 
 	return server
