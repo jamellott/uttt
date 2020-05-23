@@ -10,6 +10,8 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+
+	"github.com/heartles/uttt/server/game"
 )
 
 // ErrValidationFailed is returned if the path provided was not valid
@@ -35,6 +37,8 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Error loading config")
 		panic(err)
 	}
+
+	_ = game.NewGame("X", "O")
 
 	server := buildServer(cfg)
 	listenAddress := fmt.Sprintf("%v:%v", cfg.Host, strconv.Itoa(cfg.Port))
