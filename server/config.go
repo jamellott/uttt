@@ -24,6 +24,9 @@ type config struct {
 	// if true, every request made to the server will be logged
 	// to stdout
 	RequestLogs bool
+
+	// if true, will verify the origin of incoming websocket connections
+	CheckOrigin bool
 }
 
 // defaultConfig defines a config suitable for local development
@@ -35,6 +38,7 @@ var defaultConfig config = config{
 	AcmeTLS:     false,
 	VerifyUser:  false,
 	RequestLogs: true,
+	CheckOrigin: false,
 }
 
 // initializeConfig returns the configuration for the server to
