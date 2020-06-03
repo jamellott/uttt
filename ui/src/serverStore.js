@@ -8,7 +8,8 @@ class WSMessage {
 const MessageType = {
   LoginRequest: "LoginRequest",
   LoginSuccess: "LoginSuccess",
-  LoginFailure: "LoginFailure",
+  LoginFailure: "ErrorMessage",
+  ErrorMessage: "ErrorMessage",
 };
 
 function createLoginRequestVerifier(socket, resolve, reject) {
@@ -19,6 +20,7 @@ function createLoginRequestVerifier(socket, resolve, reject) {
     if (data.messageType === MessageType.LoginSuccess) {
       resolve(socket);
     } else if (data.messageType === MessageType.LoginFailure) {
+      console.error(data.payload.message);
       reject("login failed");
     } else {
       reject("Unexpected MessageType: " + data.messageType);

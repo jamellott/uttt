@@ -40,6 +40,7 @@ type GameUpdate struct {
 
 type LoginSuccess struct {
 	Username string       `json:"username"`
+	PlayerID string       `json:"playerID"`
 	Games    []GameUpdate `json:"games"`
 }
 

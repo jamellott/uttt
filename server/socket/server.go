@@ -69,7 +69,16 @@ func (s *Server) login(socket *websocket.Conn) (*clientConn, error) {
 	}
 
 	conn.playerID = request.PlayerID
-	conn.sendMessage(LoginSuccess{})
+	player, err := s.games.CreatePlayer(conn.playerID, conn.playerID)
+	if err != nil {
+		conn.sendError("invalid login", false)
+		return nil, err
+	}
+
+	conn.sendMessage(LoginSuccess{
+		Username: player.Username,
+		PlayerID: player.UUID,
+	})
 
 	return &conn, nil
 }

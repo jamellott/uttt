@@ -18,12 +18,17 @@ type clientConn struct {
 }
 
 func (conn *clientConn) malformedRequest() error {
-	err := conn.sendMessage(ErrorMessage{
-		Message:     "malformed request",
-		Recoverable: false,
-	})
+	return conn.sendError("malformed request", false)
+}
 
-	conn.socket.Close()
+func (conn *clientConn) sendError(message string, recoverable bool) error {
+	err := conn.sendMessage(ErrorMessage{
+		Message:     message,
+		Recoverable: recoverable,
+	})
+	if !recoverable {
+		conn.socket.Close()
+	}
 	return err
 }
 
