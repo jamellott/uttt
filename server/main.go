@@ -10,6 +10,9 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+
+	"github.com/heartles/uttt/server/config"
+	"github.com/heartles/uttt/server/socket"
 )
 
 // ErrValidationFailed is returned if the path provided was not valid
@@ -30,7 +33,7 @@ func ValidatePath(path string) (string, error) {
 }
 
 func main() {
-	cfg, err := initializeConfig()
+	cfg, err := config.Load()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error loading config")
 		panic(err)
@@ -47,9 +50,9 @@ func main() {
 
 // buildServer constructs an echo instance with the routes setup
 // according to the configuration given
-func buildServer(cfg *config) *echo.Echo {
+func buildServer(cfg *config.Config) *echo.Echo {
 	server := echo.New()
-	socketServer := NewSocketServer(cfg)
+	socketServer := socket.NewServer(cfg)
 
 	server.Use(middleware.Recover())
 	if cfg.RequestLogs {

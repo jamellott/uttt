@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"io/ioutil"
@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type config struct {
+type Config struct {
 	Port int
 	Host string
 
@@ -32,7 +32,7 @@ type config struct {
 // defaultConfig defines a config suitable for local development
 // Production instances can customize it by creating a config.yaml
 // and setting the environment variable UTTT_CONFIG_FILE
-var defaultConfig config = config{
+var defaultConfig Config = Config{
 	Port:        8080,
 	Host:        "localhost",
 	AcmeTLS:     false,
@@ -41,11 +41,11 @@ var defaultConfig config = config{
 	CheckOrigin: false,
 }
 
-// initializeConfig returns the configuration for the server to
+// Load returns the configuration for the server to
 // use. If the environment does not specify a config file (or if
 // said config file does not specify all fields), default
 // values are used.
-func initializeConfig() (*config, error) {
+func Load() (*Config, error) {
 	cfg := defaultConfig
 
 	filename := os.Getenv("UTTT_CONFIG_FILE")
@@ -55,7 +55,7 @@ func initializeConfig() (*config, error) {
 
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return &cfg, err
 	}
 
 	err = yaml.Unmarshal(data, &cfg)
