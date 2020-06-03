@@ -1,6 +1,10 @@
 package socket
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/heartles/uttt/server/game"
+)
 
 type IncomingSocketMessage struct {
 	Type    string          `json:"messageType"`
@@ -17,7 +21,26 @@ type LoginRequest struct {
 	Authorization string `json:"authorization"`
 }
 
+type NewGame struct {
+	Opponent string `json:"opponent"`
+}
+
+type PlayMove struct {
+	GameID string    `json:"gameID"`
+	Move   game.Move `json:"move"`
+}
+
+type GameUpdate struct {
+	GameID     string      `json:"gameID"`
+	PlayerX    string      `json:"playerX"`
+	PlayerO    string      `json:"playerO"`
+	ValidMoves []game.Move `json:"validMoves"`
+	Victor     string      `json:"victor"`
+}
+
 type LoginSuccess struct {
+	Username string       `json:"username"`
+	Games    []GameUpdate `json:"games"`
 }
 
 type ErrorMessage struct {

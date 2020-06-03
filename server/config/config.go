@@ -27,6 +27,8 @@ type Config struct {
 
 	// if true, will verify the origin of incoming websocket connections
 	CheckOrigin bool
+
+	DBFilename string
 }
 
 // defaultConfig defines a config suitable for local development
@@ -39,6 +41,7 @@ var defaultConfig Config = Config{
 	VerifyUser:  false,
 	RequestLogs: true,
 	CheckOrigin: false,
+	DBFilename:  "./games.db",
 }
 
 // Load returns the configuration for the server to

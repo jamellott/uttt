@@ -13,6 +13,7 @@ import (
 
 	"github.com/heartles/uttt/server/config"
 	"github.com/heartles/uttt/server/socket"
+	"github.com/heartles/uttt/server/store"
 )
 
 // ErrValidationFailed is returned if the path provided was not valid
@@ -52,7 +53,11 @@ func main() {
 // according to the configuration given
 func buildServer(cfg *config.Config) *echo.Echo {
 	server := echo.New()
-	socketServer := socket.NewServer(cfg)
+	gameService, err := store.NewGameService(cfg.DBFilename)
+	if err != nil {
+		panic(err)
+	}
+	socketServer := socket.NewServer(cfg, gameService)
 
 	server.Use(middleware.Recover())
 	if cfg.RequestLogs {

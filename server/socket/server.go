@@ -6,14 +6,16 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/heartles/uttt/server/config"
+	"github.com/heartles/uttt/server/store"
 )
 
 type Server struct {
 	config   *config.Config
 	upgrader websocket.Upgrader
+	games    *store.GameService
 }
 
-func NewServer(c *config.Config) *Server {
+func NewServer(c *config.Config, gameSvc *store.GameService) *Server {
 	checkOriginFunc := func(*http.Request) bool {
 		return true
 	}
@@ -29,6 +31,7 @@ func NewServer(c *config.Config) *Server {
 			WriteBufferSize: 1024,
 			CheckOrigin:     checkOriginFunc,
 		},
+		gameSvc,
 	}
 }
 

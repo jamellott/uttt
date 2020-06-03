@@ -39,42 +39,38 @@ var ErrInvalidLastMove = errors.New("invalid lastMove")
 // SubCoordinate is a reference to either a subgrid or a square
 // on the game board
 type SubCoordinate struct {
-	X, Y int
+	X int `json:"x"`
+	Y int `json:"y"`
 }
 
 // Coordinate is a reference to a specific square on a specific
 // subgrid
 type Coordinate struct {
-	GameSquare    SubCoordinate
-	SubgridSquare SubCoordinate
+	GameSquare    SubCoordinate `json:"gameSquare"`
+	SubgridSquare SubCoordinate `json:"subgridSquare"`
 }
 
 // Move encapsulates a player's move
 type Move struct {
-	PlayerID string
-	Coordinate
+	PlayerID   string `json:"playerID"`
+	Coordinate `json:"coordinate"`
 }
 
 // Game encapsulates a game of uttt
-type Game interface {
-	PlayMove(Move) error
-	SquareOwner(Coordinate) (string, error)
-	BlockWinner(SubCoordinate) (string, error)
-	GameWinner() string
-	IsCompleted() bool
+type Game struct {
+	playerX  string
+	playerO  string
+	lastTurn *Coordinate
+	grid     *subgrid
 }
 
 // NewGame is a basic constructor for a Game
-func NewGame(playerX, playerO string) (Game, error) {
-	return newGame(playerX, playerO)
-}
-
-func newGame(playerX, playerO string) (*game, error) {
+func NewGame(playerX, playerO string) (*Game, error) {
 	if playerX == playerO {
 		return nil, ErrInvalidPlayer
 	}
 
-	return &game{
+	return &Game{
 		playerX, playerO,
 		nil,
 		initGameBoard(),
@@ -82,14 +78,14 @@ func newGame(playerX, playerO string) (*game, error) {
 }
 
 // LoadGame loads a game from save data
-func LoadGame(playerX, playerO string, gameState string, lastTurn *Coordinate) (Game, error) {
+func LoadGame(playerX, playerO string, gameState string, lastTurn *Coordinate) (*Game, error) {
 	// remove all invalid characters (useful for whitespace in tests)
 	state := regexp.MustCompile("[^XO_]+").ReplaceAllString(gameState, "")
 	if len(state) != 3*3*3*3 {
 		return nil, ErrInvalidInput
 	}
 
-	game, err := newGame(playerX, playerO)
+	game, err := NewGame(playerX, playerO)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +107,7 @@ func NewCoordinate(gameX, gameY, subX, subY int) Coordinate {
 	}
 }
 
-func (g *game) PlayMove(m Move) error {
+func (g *Game) PlayMove(m Move) error {
 	player := g.playerIDToEnum(m.PlayerID)
 	coord := m.Coordinate
 	err := g.verifyMove(player, coord)
@@ -131,15 +127,15 @@ func (g *game) PlayMove(m Move) error {
 	return nil
 }
 
-func (g *game) IsCompleted() bool {
+func (g *Game) IsCompleted() bool {
 	return g.GameWinner() != ""
 }
 
-func (g *game) GameWinner() string {
+func (g *Game) GameWinner() string {
 	return g.playerEnumToID(g.grid.state)
 }
 
-func (g *game) BlockWinner(c SubCoordinate) (string, error) {
+func (g *Game) BlockWinner(c SubCoordinate) (string, error) {
 	sg, ok := g.grid.board[c]
 	if !ok {
 		return "", ErrInvalidCoordinate
@@ -148,7 +144,7 @@ func (g *game) BlockWinner(c SubCoordinate) (string, error) {
 	return g.playerEnumToID(sg.state), nil
 }
 
-func (g *game) SquareOwner(c Coordinate) (string, error) {
+func (g *Game) SquareOwner(c Coordinate) (string, error) {
 	if !g.isValidCoordinate(c) {
 		return "", ErrInvalidCoordinate
 	}
@@ -184,7 +180,7 @@ type subgrid struct {
 	board map[SubCoordinate]*subgrid
 }
 
-func (g *game) playerEnumToID(p squareState) string {
+func (g *Game) playerEnumToID(p squareState) string {
 	switch p {
 	case stateInProgress:
 		return ""
@@ -199,7 +195,7 @@ func (g *game) playerEnumToID(p squareState) string {
 	}
 }
 
-func (g *game) playerIDToEnum(p string) squareState {
+func (g *Game) playerIDToEnum(p string) squareState {
 	if p == g.playerX {
 		return stateX
 	} else if p == g.playerO {
@@ -209,7 +205,7 @@ func (g *game) playerIDToEnum(p string) squareState {
 	return stateInvalid
 }
 
-func (g *game) isValidCoordinate(c Coordinate) bool {
+func (g *Game) isValidCoordinate(c Coordinate) bool {
 	sg, ok := g.grid.board[c.GameSquare]
 	if !ok {
 		return false
@@ -219,11 +215,11 @@ func (g *game) isValidCoordinate(c Coordinate) bool {
 	return ok
 }
 
-func (g *game) getSquareState(c Coordinate) squareState {
+func (g *Game) getSquareState(c Coordinate) squareState {
 	return g.grid.board[c.GameSquare].board[c.SubgridSquare].state
 }
 
-func (g *game) loadState(state string, lastTurn *Coordinate) error {
+func (g *Game) loadState(state string, lastTurn *Coordinate) error {
 	i := 0
 	// GameCoordinate = {{z, w} {x, y}}
 	for w := 1; w <= 3; w++ {
@@ -273,7 +269,7 @@ func (g *game) loadState(state string, lastTurn *Coordinate) error {
 }
 
 // verify that a move is valid
-func (g *game) verifyMove(player squareState, coord Coordinate) error {
+func (g *Game) verifyMove(player squareState, coord Coordinate) error {
 
 	if player == stateInvalid {
 		return ErrInvalidPlayer
