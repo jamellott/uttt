@@ -1,28 +1,26 @@
 <template>
   <div class="container">
     <div
-      v-for="rowIdx in range"
-      :key="rowIdx"
-      :class="`row game-row-${rowIdx + 1}`"
+      v-for="(gridRow, i) in game.grids"
+      :key="i"
+      :class="`row grid-row p-1 game-row-${i + 1}`"
     >
       <div
-        v-for="colIdx in range"
-        :key="colIdx"
-        :class="`col-4 game-col-${colIdx + 1}`"
+        v-for="(gridCol, i) in gridRow"
+        :key="i"
+        :class="`col-4 grid-col game-col-${i + 1}`"
       >
         <div
-          v-for="subRowIdx in range"
-          :key="subRowIdx"
-          :class="`row game-row-${subRowIdx + 1}`"
+          v-for="(row, i) in gridCol.squares"
+          :key="i"
+          :class="`row sub-row game-row-${i + 1}`"
         >
           <div
-            v-for="subColIdx in range"
-            :key="subColIdx"
-            :class="`col-4 game-col-${subColIdx + 1}`"
+            v-for="(sq, i) in row"
+            :key="i"
+            :class="`col-4 p-0 game-col-${i + 1}`"
           >
-            <square
-              v-bind:square="rows[rowIdx][colIdx][subRowIdx][subColIdx]"
-            />
+            <square :square="sq" :game="game" />
           </div>
         </div>
       </div>
@@ -31,22 +29,22 @@
 </template>
 
 <script>
+import Square from "./Square.vue";
+
 export default {
   name: "Grid",
   props: {
-    gameID: String,
+    game: Object,
+  },
+  components: {
+    Square,
   },
   data() {
     return {
       username: "",
     };
   },
-  computed: {
-    rows() {
-      return this.$store.dispatch("getGame", this.gameID);
-    },
-  },
-  methods: {},
+  computed: {},
 };
 </script>
 
@@ -58,23 +56,30 @@ export default {
 }
 */
 
+.grid-row {
+  min-height: 150px;
+}
+
 .game-row-1 {
-  border-bottom: 4px solid black;
+  border-bottom: 3px solid black;
 }
 
 .game-row-2 {
-  border-bottom: 4px solid black;
+  border-bottom: 3px solid black;
 }
 
 .game-row-3 {
 }
 
+.sub-row {
+  min-height: 40px;
+}
 .game-col-1 {
-  border-right: 4px solid black;
+  border-right: 3px solid black;
 }
 
 .game-col-2 {
-  border-right: 4px solid black;
+  border-right: 3px solid black;
 }
 
 .game-col-3 {

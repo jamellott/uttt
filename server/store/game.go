@@ -115,7 +115,7 @@ func (g *Game) GetGameState(playerID string) (*GameState, error) {
 
 			for x := 0; x <= 2; x++ {
 				for y := 0; y <= 2; y++ {
-					coord := game.NewCoordinate(x, y, z, w)
+					coord := game.NewCoordinate(z+1, w+1, x+1, y+1)
 					square := &grid.Squares[y][x]
 					owner, _ := g.underlying.SquareOwner(coord)
 					if owner != "" {

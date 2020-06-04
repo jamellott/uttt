@@ -1,6 +1,6 @@
 <template>
   <div class="square">
-    <div v-if="square.playable" v-on:click="play()" class="playable" />
+    <div v-if="square.playable" v-on:click="play()" class="square playable" />
 
     <!--TODO: Add icons-->
     <div v-else-if="square.owner == game.playerX" class="player-x"></div>
@@ -17,9 +17,7 @@ export default {
     game: Object,
   },
   methods: {
-    play() {
-      this.$store.dispatch("playMove", this.square.move);
-    },
+    play() {},
   },
 };
 </script>
@@ -38,7 +36,7 @@ export default {
   background-color: blue;
 }
 
-.square .div {
+.square {
   width: 100%;
   height: 100%;
 }

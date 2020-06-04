@@ -1,11 +1,21 @@
 <template>
-  <div class="game">Game {{ gameID }} vs {{ getOpponent(game) }}</div>
+  <div class="game">
+    <div>Game {{ gameID }} vs {{ getOpponent(game) }}</div>
+    <div>
+      <grid :game="game"></grid>
+    </div>
+  </div>
 </template>
 
 <script>
+import Grid from "./Grid.vue";
+
 export default {
   name: "Game",
   props: ["gameID"],
+  components: {
+    Grid,
+  },
   data() {
     return {
       username: "",
