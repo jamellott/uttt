@@ -1,7 +1,9 @@
 <template>
-  <div class="login">
-    <input v-model="username" />
-    <button v-on:click="login">Login</button>
+  <div class="login m-5">
+    <h1>Debug Login</h1>
+    <label for="username">username</label>
+    <input name="username" v-model="username" />
+    <b-button variant="primary" v-on:click="login">Login</b-button>
   </div>
 </template>
 
