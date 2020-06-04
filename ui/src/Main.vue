@@ -1,6 +1,5 @@
 <template>
-  <div id="main">
-    <img alt="Vue logo" src="./assets/logo.png" />
+  <div class="container w-100 h-100 p-0 m-0">
     <router-view></router-view>
   </div>
 </template>
@@ -17,12 +16,23 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
   height: 100%;
-  background-color: #222;
 }
-
-:root {
+body {
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
   height: 100%;
+}
+:root {
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
+  height: 100%;
+}
+#main div {
 }
 </style>

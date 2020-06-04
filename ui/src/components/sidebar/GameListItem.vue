@@ -1,8 +1,5 @@
 <template>
-  <div class="login">
-    <input v-model="username" />
-    <button v-on:click="login">Login</button>
-  </div>
+  <div class="login"></div>
 </template>
 
 <script>

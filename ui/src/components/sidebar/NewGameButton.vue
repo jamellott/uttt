@@ -1,13 +1,10 @@
 <template>
-  <div class="login">
-    <input v-model="username" />
-    <button v-on:click="login">Login</button>
-  </div>
+  <div></div>
 </template>
 
 <script>
 export default {
-  name: "NewGameButton",
+  name: "NewGameMenu",
   data() {
     return {
       username: "",
