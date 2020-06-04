@@ -146,10 +146,9 @@ func (g *Game) PlayMove(m game.Move) error {
 	return err
 }
 
+// The write mutex must be held during this call
 func (g *Game) listenForUpdates() <-chan struct{} {
 	ch := make(chan struct{})
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
 	g.listenChannels = append(g.listenChannels, ch)
 
 	return ch
@@ -281,16 +280,18 @@ func (s *GameService) NewGame(playerX string, playerO string) error {
 
 	updateCh, ok := s.players[playerX]
 	if ok {
-		go func() {
-			updateCh <- NewGameNotification{loaded.game, loaded.game.listenForUpdates()}
-		}()
+		notif := NewGameNotification{loaded.game, loaded.game.listenForUpdates()}
+		go func(ch chan NewGameNotification, notif NewGameNotification) {
+			ch <- notif
+		}(updateCh, notif)
 	}
 
 	updateCh, ok = s.players[playerO]
 	if ok {
-		go func() {
-			updateCh <- NewGameNotification{loaded.game, loaded.game.listenForUpdates()}
-		}()
+		notif := NewGameNotification{loaded.game, loaded.game.listenForUpdates()}
+		go func(ch chan NewGameNotification, notif NewGameNotification) {
+			ch <- notif
+		}(updateCh, notif)
 	}
 
 	return nil
@@ -328,12 +329,15 @@ func (s *GameService) OpenGamesForPlayer(playerUUID string) ([]NewGameNotificati
 			}
 
 			s.games[uuid] = loaded
-
+			// don't need the game mutex held here because nobody else can have
+			// a handle to it yet
 			games[i] = NewGameNotification{loaded.game, loaded.game.listenForUpdates()}
 		} else {
 			// attach to loaded game
 			loaded.openConns++
+			loaded.game.mutex.Lock()
 			games[i] = NewGameNotification{loaded.game, loaded.game.listenForUpdates()}
+			loaded.game.mutex.Unlock()
 		}
 	}
 
