@@ -1,14 +1,29 @@
 <template>
-  <div class="game"></div>
+  <div class="game">Game {{ gameID }} vs {{ getOpponent(game) }}</div>
 </template>
 
 <script>
 export default {
   name: "Game",
+  props: ["gameID"],
   data() {
     return {
       username: "",
     };
+  },
+  computed: {
+    game() {
+      return this.$store.state.games[this.gameID];
+    },
+  },
+  methods: {
+    getOpponent(game) {
+      if (game.playerX == this.$store.state.playerID) {
+        return game.playerOName;
+      }
+
+      return game.playerXName;
+    },
   },
 };
 </script>

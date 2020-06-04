@@ -8,7 +8,7 @@
           :to="'/app/game/' + game.gameID"
           :key="game.gameID"
           ><li class="border border-primary rounded">
-            vs {{ getOpponent(game.gameID) }}
+            vs {{ getOpponent(game) }}
           </li></router-link
         >
         <router-link to="/app/new"
@@ -43,10 +43,7 @@ export default {
     },
   },
   methods: {
-    getOpponent(id) {
-      let game = this.games[this.games.find((g) => g.gameID == id)];
-
-      if (game == undefined) return "error";
+    getOpponent(game) {
       if (game.playerX == this.$store.state.playerID) {
         return game.playerOName;
       }

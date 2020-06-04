@@ -9,7 +9,7 @@ const routes = [
     component: components.App,
     children: [
       { path: "new", component: components.NewGameMenu },
-      { path: "game/:gameId", component: components.Game, props: true },
+      { path: "game/:gameID", component: components.Game, props: true },
     ],
   },
 ];

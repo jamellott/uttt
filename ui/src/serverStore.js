@@ -1,3 +1,5 @@
+import Vue from "vue";
+
 class WSMessage {
   constructor(type, payload) {
     this.messageType = type;
@@ -91,7 +93,7 @@ const store = {
   state: {
     username: null,
     playerID: null,
-    games: [],
+    games: {},
     usernameMap: {},
     playerIDMap: {},
   },
@@ -104,23 +106,11 @@ const store = {
       state.games = games;
     },
     gameUpdate(state, game) {
-      let idx = state.games.find((g) => g.gameID == game.gameID);
-      console.debug(idx);
-      if (idx === undefined) {
-        state.games.push(game);
-      } else {
-        state.games[idx] = game;
-      }
-      let swp = state.games;
-      state.games = swp;
+      Vue.set(state.games, game.gameID, game);
     },
     addLookupResult(state, result) {
-      let usernameMap = state.usernameMap;
-      let playerIDMap = state.playerIDMap;
-      usernameMap[result.username] = result.playerID;
-      playerIDMap[result.playerID] = result.username;
-      state.usernameMap = usernameMap;
-      state.playerIDMap = playerIDMap;
+      Vue.set(state.usernameMap, result.username, result.playerID);
+      Vue.set(state.playerIDMap, result.playerID, result.username);
     },
   },
   plugins: [webSocketHandler.installFunc()],
@@ -158,11 +148,10 @@ const store = {
       return webSocketHandler.sendMessagePromise(message); // TODO: set up better promise mechanism
     },
   },
-  // getters: {
-  //   getUsername(state) {
-  //     return state.username;
-  //   },
-  // },
+  getters: {
+    getGame: (state) => (id) =>
+      state.games[state.games.find((g) => g.gameID == id)],
+  },
 };
 
 export default store;
