@@ -1,24 +1,62 @@
 <template>
-  <div class="login">
-    <input v-model="username" />
-    <button v-on:click="login">Login</button>
+  <div class="p-t-2">
+    <b-card class="mt-5">
+      <b-card-text>
+        <b-form>
+          <b-form-group label="Opponent Username" label-for="opponent">
+            <b-form-input
+              id="opponent"
+              v-model="opponentUsername"
+              :state="validated"
+              required
+            >
+            </b-form-input>
+            <b-form-text v-if="isValidating"
+              >Checking that user exists...</b-form-text
+            >
+            <b-form-invalid-feedback :state="!invalidated"
+              >User does not exist.</b-form-invalid-feedback
+            >
+          </b-form-group>
+          <b-form-group>
+            <b-button :disabled="!validated" variant="primary"
+              >Start Game</b-button
+            >
+          </b-form-group>
+        </b-form>
+      </b-card-text>
+    </b-card>
   </div>
 </template>
 
 <script>
 export default {
-  name: "NewGameMenu",
+  name: "NewGameButton",
   data() {
     return {
-      username: "",
+      opponentUsername: "",
+      opponentUUID: null,
+      isValidating: false,
     };
   },
+  computed: {
+    validated() {
+      return !this.isValidating && this.opponentUUID !== null;
+    },
+    invalidated() {
+      return !this.isValidating && this.opponentUUID === null;
+    },
+  },
   methods: {
-    login: function() {
+    validateOpponent() {
+      this.isValidating = true;
       this.$store
-        .dispatch("login", this.username)
-        .then(() => console.log("connection succeeded"))
-        .catch((ex) => console.error(ex));
+        .dispatch("lookupOpponent", this.opponentUsername)
+        .then((uuid) => {
+          this.opponentUUID = uuid;
+          this.isValidating = false;
+        })
+        .catch((err) => console.error(err));
     },
   },
 };

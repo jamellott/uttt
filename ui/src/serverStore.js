@@ -71,7 +71,7 @@ const webSocketHandler = {
 
 const store = {
   state: {
-    username: "",
+    username: null,
     playerID: "",
     games: [],
   },
@@ -114,8 +114,16 @@ const store = {
         });
       });
     },
-    playMove(context, move) {
-      let message = new WSMessage("PlayMove", move);
+    playMove(context, { gameID, move }) {
+      let message = new WSMessage("PlayMove", { gameID, move });
+      webSocketHandler.sendMessage(message);
+    },
+    newGame(context, opponent) {
+      let message = new WSMessage("NewGame", { opponent });
+      webSocketHandler.sendMessage(message);
+    },
+    lookupOpponent(context, opponent) {
+      let message = new WSMessage("LookupByUsername", { username: opponent });
       webSocketHandler.sendMessage(message);
     },
   },
