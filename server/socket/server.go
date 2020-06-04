@@ -158,7 +158,7 @@ func (s *Server) handleMessage(conn *clientConn, msg interface{}, games []store.
 			if games[idx].Game.UUID() == v.GameID {
 				err := games[idx].Game.PlayMove(v.Move)
 				if err != nil {
-					panic(err)
+					conn.sendError(err.Error(), false)
 				}
 			}
 		}
@@ -198,7 +198,7 @@ func (s *Server) handleLookupByUsername(conn *clientConn, username string) {
 func (s *Server) handleNewGame(conn *clientConn, payload *NewGame) {
 	err := s.games.NewGame(conn.playerID, payload.OpponentID)
 	if err != nil {
-		panic(err)
+		conn.sendError("error processing command", true)
 	}
 }
 

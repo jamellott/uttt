@@ -137,47 +137,20 @@ func (g *Game) PlayMove(m game.Move) error {
 
 	err := g.underlying.PlayMove(m)
 	for _, ch := range g.listenChannels {
-		go func() {
+		go func(ch chan struct{}) {
+			g.mutex.RLock()
+			defer g.mutex.RUnlock()
 			ch <- struct{}{}
-		}()
+		}(ch)
 	}
 	return err
 }
 
 func (g *Game) listenForUpdates() <-chan struct{} {
-	unbufferedCh := make(chan struct{})
 	ch := make(chan struct{})
-	// avoid potential (but unlikely) deadlock
-	go func() {
-		var updateOccurred bool
-
-		for {
-			defer close(ch)
-			if updateOccurred {
-				select {
-				case ch <- struct{}{}:
-					break
-
-				case _, ok := <-unbufferedCh:
-					if !ok {
-						return
-					}
-
-					updateOccurred = true
-					break
-				}
-			} else {
-				_, ok := <-unbufferedCh
-				if !ok {
-					return
-				}
-
-				updateOccurred = true
-			}
-		}
-	}()
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
+	g.listenChannels = append(g.listenChannels, ch)
 
 	return ch
 }
