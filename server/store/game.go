@@ -3,8 +3,10 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/heartles/uttt/server/game"
 )
@@ -332,6 +334,7 @@ func (s *GameService) OpenGamesForPlayer(playerUUID string) ([]NewGameNotificati
 			// don't need the game mutex held here because nobody else can have
 			// a handle to it yet
 			games[i] = NewGameNotification{loaded.game, loaded.game.listenForUpdates()}
+			go s.periodicFlushToDB(loaded.game)
 		} else {
 			// attach to loaded game
 			loaded.openConns++
@@ -344,4 +347,24 @@ func (s *GameService) OpenGamesForPlayer(playerUUID string) ([]NewGameNotificati
 	ch := make(chan NewGameNotification)
 	s.players[playerUUID] = ch
 	return games, ch, nil
+}
+
+func (s *GameService) periodicFlushToDB(g *Game) {
+	for {
+		<-time.After(1 * time.Minute)
+		g.mutex.RLock()
+		if len(g.listenChannels) == 0 {
+			// game has been unloaded, do nothing
+			// and exit
+			return
+		}
+
+		err := s.Store.saveGame(g.uuid, g.underlying)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		g.mutex.RUnlock()
+
+	}
 }
