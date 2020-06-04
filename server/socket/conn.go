@@ -7,14 +7,17 @@ import (
 	"reflect"
 
 	"github.com/gorilla/websocket"
+	"github.com/heartles/uttt/server/store"
 )
 
 var errMalformedRequest = errors.New("malformed request")
 var errInvalidRequestType = errors.New("invalid request type")
 
 type clientConn struct {
-	socket   *websocket.Conn
-	playerID string
+	socket    *websocket.Conn
+	playerID  string
+	openGames []store.NewGameNotification
+	cancelCtx func()
 }
 
 func (conn *clientConn) malformedRequest() error {

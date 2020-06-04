@@ -2,7 +2,6 @@ package store
 
 import (
 	"database/sql"
-	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -21,20 +20,22 @@ type Store struct {
 const initUsers = `
 CREATE TABLE IF NOT EXISTS "users"
 (
-    [PK_UUID] TEXT PRIMARY KEY,
+    [PK_UUID] TEXT UNIQUE PRIMARY KEY,
     [Username] TEXT UNIQUE NOT NULL,
     [GoogleID] INTEGER UNIQUE NOT NULL
 );
+
+REPLACE INTO users(PK_UUID, Username, GoogleID) VALUES("tie", "tie", "tie");
 `
 
 const initGames = `
 CREATE TABLE IF NOT EXISTS "matches"
 (
-	[PK_UUID] CHAR(36) PRIMARY KEY,
+	[PK_UUID] CHAR(36) UNIQUE PRIMARY KEY,
 	[GameData] TEXT NOT NULL,
 	[UserX] TEXT NOT NULL,
 	[UserO] TEXT NOT NULL,
-	[Victor] TEXT NOT NULL,
+	[Victor] TEXT,
 	[LastMoveGameX] INTEGER,
 	[LastMoveGameY] INTEGER,
 	[LastMoveSubgridX] INTEGER,
@@ -76,7 +77,44 @@ func (s *Store) TryLookupPlayer(googleID string) (*Player, error) {
 	} else if err != nil {
 		return nil, err
 	}
-	fmt.Println("logging in " + id + " " + username)
+
+	return &Player{
+		UUID:     id,
+		Username: username,
+		GoogleID: googleID,
+	}, nil
+}
+
+func (s *Store) TryLookupPlayerUUID(id string) (*Player, error) {
+	row := s.db.QueryRow(`SELECT GoogleID, Username FROM users WHERE PK_UUID = ?;`, id)
+
+	var googleID string
+	var username string
+	err := row.Scan(&googleID, &username)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &Player{
+		UUID:     id,
+		Username: username,
+		GoogleID: googleID,
+	}, nil
+}
+
+func (s *Store) TryLookupPlayerUsername(username string) (*Player, error) {
+	row := s.db.QueryRow(`SELECT PK_UUID, GoogleID FROM users WHERE Username = ?;`, username)
+
+	var id string
+	var googleID string
+	err := row.Scan(&id, &googleID)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
 
 	return &Player{
 		UUID:     id,
@@ -110,14 +148,96 @@ func (s *Store) CreatePlayer(username string, googleID string) (*Player, error) 
 	}, nil
 }
 
+func (s *Store) saveNewGame(game *game.Game) (string, error) {
+	id := uuid.New().String()
+	return id, s.saveGame(id, game)
+}
+
 func (s *Store) saveGame(gameID string, game *game.Game) error {
-	panic("not impl")
+	playerX, playerO, state, lastMove := game.SaveGame()
+
+	var lastGameX, lastGameY, lastSubX, lastSubY *int
+	if lastMove != nil {
+		lastGameX = &lastMove.GameSquare.X
+		lastGameY = &lastMove.GameSquare.Y
+		lastSubX = &lastMove.SubgridSquare.X
+		lastSubY = &lastMove.SubgridSquare.Y
+	}
+
+	finished := game.IsCompleted()
+	var victor *string
+	if finished {
+		v := game.GameWinner()
+		victor = &v
+	}
+
+	_, err := s.db.Exec(`
+		REPLACE INTO matches(
+			PK_UUID,
+			GameData,
+			UserX,
+			UserO,
+			Victor,
+			LastMoveGameX,
+			LastMoveGameY,
+			LastMoveSubgridX,
+			LastMoveSubgridY,
+			Finished)
+			VALUES(?,?.?,?,?,?,?,?,?,?);
+		`,
+		gameID, state, playerX, playerO, victor, lastGameX, lastGameY,
+		lastSubX, lastSubY, finished)
+	return err
 }
 
 func (s *Store) loadGame(gameID string) (*game.Game, error) {
-	panic("not impl")
+	row := s.db.QueryRow(`
+		SELECT
+			GameData,UserX,UserO,
+			LastMoveGameX,LastMoveGameY,
+			LastMoveSubgridX,LastMoveSubgridY
+		FROM matches WHERE PK_UUID = ?;
+	`, gameID)
+
+	var state, playerX, playerO string
+	var lastGameX, lastGameY, lastSubX, lastSubY *int
+	err := row.Scan(&state, &playerX, &playerO, &lastGameX, &lastGameY, &lastSubX, &lastSubY)
+	if err != nil {
+		return nil, err
+	}
+
+	var lastTurn *game.Coordinate
+	if lastGameX != nil {
+		coord := game.NewCoordinate(*lastGameX, *lastGameY, *lastSubX, *lastSubY)
+		lastTurn = &coord
+	}
+
+	g, err := game.LoadGame(playerX, playerO, state, lastTurn)
+	if err != nil {
+		return nil, err
+	}
+
+	return g, nil
 }
 
 func (s *Store) getGameUUIDS(playerID string) ([]string, error) {
-	panic("not impl")
+	rows, err := s.db.Query(`
+		SELECT PK_UUID FROM matches WHERE UserX = ? OR UserO = ?;
+	`, playerID, playerID)
+	if err != nil {
+		return nil, err
+	}
+
+	uuids := []string{}
+	for rows.Next() {
+		uuid := ""
+		rows.Scan(&uuid)
+		uuids = append(uuids, uuid)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return uuids, nil
 }

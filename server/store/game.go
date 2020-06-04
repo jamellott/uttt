@@ -1,7 +1,9 @@
 package store
 
 import (
+	"context"
 	"errors"
+	"reflect"
 	"sync"
 
 	"github.com/heartles/uttt/server/game"
@@ -17,7 +19,14 @@ type Game struct {
 	listenChannels []chan struct{}
 }
 
+func (g *Game) UUID() string {
+	return g.uuid
+}
+
 func (g *Game) Close(ch <-chan struct{}) error {
+	if g == nil {
+		return nil
+	}
 	g.mutex.Lock()
 
 	idx := 0
@@ -29,6 +38,7 @@ func (g *Game) Close(ch <-chan struct{}) error {
 		}
 	}
 	if !found {
+		g.mutex.Unlock()
 		return errors.New("Invalid channel")
 	}
 
@@ -37,6 +47,95 @@ func (g *Game) Close(ch <-chan struct{}) error {
 
 	g.mutex.Unlock()
 	return g.service.closeGame(g)
+}
+
+type SquareState struct {
+	Owner      *string         `json:"owner"`
+	Playable   bool            `json:"playable"`
+	Coordinate game.Coordinate `json:"coordinate"`
+}
+
+type GridState struct {
+	Owner   *string           `json:"owner"`
+	Squares [3][3]SquareState `json:"squares"`
+}
+
+type GameState struct {
+	GameID  string `json:"gameID"`
+	PlayerX string `json:"playerX"`
+	PlayerO string `json:"playerO"`
+
+	PlayerXName string `json:playerXName"`
+	PlayerOName string `json:playerOName"`
+
+	Victor *string         `json:"victor"`
+	Grids  [3][3]GridState `json:"grids"`
+}
+
+func (g *Game) GetGameState(playerID string) (*GameState, error) {
+	g.mutex.RLock()
+	defer g.mutex.RUnlock()
+
+	validMoves := g.underlying.GetValidMoves(playerID)
+
+	isPlayable := func(coord game.Coordinate) bool {
+		for i := range validMoves {
+			if validMoves[i].Coordinate == coord {
+				return true
+			}
+		}
+		return false
+	}
+
+	playerX, playerO, _, _ := g.underlying.SaveGame()
+	playerXFull, _ := g.service.TryLookupPlayerUUID(playerX)
+	playerOFull, _ := g.service.TryLookupPlayerUUID(playerO)
+	gameState := &GameState{
+		GameID:      g.uuid,
+		PlayerX:     playerX,
+		PlayerO:     playerO,
+		PlayerXName: playerXFull.Username,
+		PlayerOName: playerOFull.Username,
+	}
+
+	victor := g.underlying.GameWinner()
+	if victor != "" {
+		gameState.Victor = &victor
+	}
+	// GameCoordinate = {{z, w} {x, y}}
+	for z := 1; z <= 3; z++ {
+		for w := 1; w <= 3; w++ {
+			grid := &gameState.Grids[w][z]
+
+			owner, _ := g.underlying.BlockWinner(game.SubCoordinate{z, w})
+
+			if owner != "" {
+				grid.Owner = &owner
+			}
+
+			for x := 1; x <= 3; x++ {
+				for y := 1; y <= 3; y++ {
+					coord := game.NewCoordinate(x, y, z, w)
+					square := &grid.Squares[y][x]
+					owner, _ := g.underlying.SquareOwner(coord)
+					if owner != "" {
+						square.Owner = &owner
+					}
+					square.Playable = isPlayable(coord)
+					square.Coordinate = coord
+				}
+			}
+		}
+	}
+
+	return gameState, nil
+}
+
+func (g *Game) PlayMove(m game.Move) error {
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+
+	return g.underlying.PlayMove(m)
 }
 
 func (g *Game) listenForUpdates() <-chan struct{} {
@@ -78,9 +177,15 @@ func (g *Game) listenForUpdates() <-chan struct{} {
 }
 
 type GameService struct {
-	games map[string]*loadedGame
-	mutex sync.Mutex
+	games   map[string]*loadedGame
+	players map[string]chan NewGameNotification
+	mutex   sync.Mutex
 	*Store
+}
+
+type NewGameNotification struct {
+	Game     *Game
+	UpdateCh <-chan struct{}
 }
 
 func NewGameService(dbFilename string) (*GameService, error) {
@@ -91,6 +196,7 @@ func NewGameService(dbFilename string) (*GameService, error) {
 
 	return &GameService{
 		map[string]*loadedGame{},
+		map[string]chan NewGameNotification{},
 		sync.Mutex{},
 		st,
 	}, nil
@@ -116,7 +222,111 @@ func (s *GameService) closeGame(g *Game) error {
 	return nil
 }
 
-func (s *GameService) OpenGamesByPlayer(playerUUID string) ([]*Game, []<-chan struct{}, error) {
+func (s *GameService) ListenAny(notifs []NewGameNotification, ctx context.Context) <-chan int {
+	if len(notifs) == 0 {
+		return nil
+	}
+
+	ch := make(chan int)
+
+	go func() {
+		defer close(ch)
+		allChs := make([]reflect.SelectCase, len(notifs)+1)
+		for {
+			for i := range notifs {
+				allChs[i] = reflect.SelectCase{
+					Dir:  reflect.SelectRecv,
+					Chan: reflect.ValueOf(notifs[i].UpdateCh),
+				}
+			}
+			allChs[len(notifs)] = reflect.SelectCase{
+				Dir:  reflect.SelectRecv,
+				Chan: reflect.ValueOf(ctx.Done()),
+			}
+			chosen, _, _ := reflect.Select(allChs)
+
+			// ctx canceled
+			if chosen == len(notifs) {
+				return
+			}
+			ch <- chosen
+		}
+	}()
+
+	return ch
+}
+
+func (s *GameService) CloseGames(notifs []NewGameNotification) {
+	for _, n := range notifs {
+		n.Game.Close(n.UpdateCh)
+	}
+}
+
+func (s *GameService) CloseNewGameCh(playerID string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	ch := s.players[playerID]
+	close(ch)
+
+	delete(s.players, playerID)
+}
+
+func (s *GameService) NewGameByUsername(playerX string, playerO string) error {
+	playerXFull, err := s.TryLookupPlayerUsername(playerX)
+	if err != nil {
+		return err
+	}
+	playerOFull, err := s.TryLookupPlayerUsername(playerO)
+	if err != nil {
+		return err
+	}
+
+	g, err := game.NewGame(playerXFull.UUID, playerOFull.UUID)
+	if err != nil {
+		return err
+	}
+
+	uuid, err := s.Store.saveNewGame(g)
+	if err != nil {
+		panic(err)
+	}
+
+	loaded := &loadedGame{
+		openConns: 1,
+		game: &Game{
+			underlying:     g,
+			service:        s,
+			uuid:           uuid,
+			listenChannels: []chan struct{}{make(chan struct{})},
+		},
+	}
+
+	loaded.game.mutex.Lock()
+	defer loaded.game.mutex.Unlock()
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.games[uuid] = loaded
+
+	updateCh, ok := s.players[playerXFull.UUID]
+	if ok {
+		go func() {
+			updateCh <- NewGameNotification{loaded.game, loaded.game.listenForUpdates()}
+		}()
+	}
+
+	updateCh, ok = s.players[playerOFull.UUID]
+	if ok {
+		go func() {
+			updateCh <- NewGameNotification{loaded.game, loaded.game.listenForUpdates()}
+		}()
+	}
+
+	return nil
+}
+
+func (s *GameService) OpenGamesForPlayer(playerUUID string) ([]NewGameNotification, <-chan NewGameNotification, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -126,8 +336,7 @@ func (s *GameService) OpenGamesByPlayer(playerUUID string) ([]*Game, []<-chan st
 	}
 
 	count := len(uuids)
-	games := make([]*Game, count)
-	chans := make([]<-chan struct{}, count)
+	games := make([]NewGameNotification, count)
 
 	for i, uuid := range uuids {
 		loaded, ok := s.games[uuid]
@@ -150,14 +359,15 @@ func (s *GameService) OpenGamesByPlayer(playerUUID string) ([]*Game, []<-chan st
 
 			s.games[uuid] = loaded
 
-			games[i] = loaded.game
-			chans[i] = loaded.game.listenForUpdates()
+			games[i] = NewGameNotification{loaded.game, loaded.game.listenForUpdates()}
 		} else {
 			// attach to loaded game
 			loaded.openConns++
-			games[i] = loaded.game
-			chans[i] = loaded.game.listenForUpdates()
+			games[i] = NewGameNotification{loaded.game, loaded.game.listenForUpdates()}
 		}
 	}
-	return games, chans, nil
+
+	ch := make(chan NewGameNotification)
+	s.players[playerUUID] = ch
+	return games, ch, nil
 }

@@ -95,6 +95,39 @@ func LoadGame(playerX, playerO string, gameState string, lastTurn *Coordinate) (
 	return game, err
 }
 
+func (g *Game) SaveGame() (playerX, playerO, gameState string, lastTurn *Coordinate) {
+	playerX = g.playerX
+	playerO = g.playerO
+	gameState = ""
+	lastTurn = g.lastTurn
+	for w := 1; w <= 3; w++ {
+		for y := 1; y <= 3; y++ {
+			for z := 1; z <= 3; z++ {
+				for x := 1; x <= 3; x++ {
+					c := NewCoordinate(z, w, x, y)
+					player := g.grid.board[c.GameSquare].board[c.SubgridSquare].state
+					switch player {
+					case stateInProgress:
+						gameState += "_"
+						break
+					case stateX:
+						gameState += "X"
+						break
+					case stateO:
+						gameState += "O"
+						break
+					default:
+						// invalid values should've been removed
+						panic("unexpected val found: " + string(player))
+					}
+				}
+			}
+		}
+	}
+
+	return
+}
+
 // NewCoordinate is a helper function for constructing a Coordinate
 func NewCoordinate(gameX, gameY, subX, subY int) Coordinate {
 	return Coordinate{
@@ -125,6 +158,30 @@ func (g *Game) PlayMove(m Move) error {
 	g.grid.match3()
 
 	return nil
+}
+
+func (g *Game) GetValidMoves(playerID string) []Move {
+	player := g.playerIDToEnum(playerID)
+
+	moves := []Move{}
+	// brute force search
+	for w := 1; w <= 3; w++ {
+		for y := 1; y <= 3; y++ {
+			for z := 1; z <= 3; z++ {
+				for x := 1; x <= 3; x++ {
+					c := NewCoordinate(z, w, x, y)
+					if g.verifyMove(player, c) == nil {
+						move := Move{
+							PlayerID:   playerID,
+							Coordinate: c,
+						}
+						moves = append(moves, move)
+					}
+				}
+			}
+		}
+	}
+	return moves
 }
 
 func (g *Game) IsCompleted() bool {

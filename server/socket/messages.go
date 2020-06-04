@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/heartles/uttt/server/game"
+	"github.com/heartles/uttt/server/store"
 )
 
 type IncomingSocketMessage struct {
@@ -29,18 +30,10 @@ type PlayMove struct {
 	Move   game.Move `json:"move"`
 }
 
-type GameUpdate struct {
-	GameID     string      `json:"gameID"`
-	PlayerX    string      `json:"playerX"`
-	PlayerO    string      `json:"playerO"`
-	ValidMoves []game.Move `json:"validMoves"`
-	Victor     string      `json:"victor"`
-}
-
 type LoginSuccess struct {
-	Username string       `json:"username"`
-	PlayerID string       `json:"playerID"`
-	Games    []GameUpdate `json:"games"`
+	Username string            `json:"username"`
+	PlayerID string            `json:"playerID"`
+	Games    []store.GameState `json:"games"`
 }
 
 type ErrorMessage struct {

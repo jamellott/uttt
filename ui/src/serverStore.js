@@ -54,9 +54,10 @@ const webSocketHandler = {
     });
   },
   handleMessage(msg) {
+    console.debug(msg);
     switch (msg.type) {
       case "GameUpdate":
-        this.state.commit("playMove", msg);
+        this.state.commit("gameUpdate", msg);
         break;
       default:
         console.error("unknown websocket message type: " + msg.type);
@@ -84,7 +85,11 @@ const store = {
     },
     gameUpdate(state, game) {
       let idx = state.games.find((g) => g.id == game.id);
-      state.games[idx] = game;
+      if (idx == -1) {
+        state.games.push(game);
+      } else {
+        state.games[idx] = game;
+      }
     },
   },
   plugins: [webSocketHandler.installFunc()],

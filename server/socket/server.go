@@ -1,6 +1,7 @@
 package socket
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -88,6 +89,22 @@ func (s *Server) login(socket *websocket.Conn) (*clientConn, error) {
 func (s *Server) runMessageLoop(conn *clientConn) {
 	incomingMsgs := s.listenForMessages(conn)
 
+	openGames, newGameCh, err := s.games.OpenGamesForPlayer(conn.playerID)
+	if err != nil {
+		panic(err)
+	}
+	defer s.games.CloseGames(openGames)
+
+	for _, g := range openGames {
+		s.handleGameUpdate(conn, g.Game)
+	}
+	var newestGame store.NewGameNotification
+	defer newestGame.Game.Close(newestGame.UpdateCh)
+
+	ctx, cancelCtx := context.WithCancel(context.TODO())
+	conn.cancelCtx = cancelCtx
+
+	openGamesCh := s.games.ListenAny(openGames, ctx)
 loop:
 	for {
 		select {
@@ -97,15 +114,66 @@ loop:
 				break loop
 			}
 
-			s.handleMessage(conn, msg)
+			s.handleMessage(conn, msg, openGames)
 			break
-			// TODO: add case for "other player played move/sent chat"
+
+		// either a game update or we need to update our new game
+		case gameIdx, ok := <-openGamesCh:
+			if !ok {
+				if newestGame.Game != nil {
+					openGames = append(openGames, newestGame)
+				}
+				ctx, cancelCtx = context.WithCancel(context.TODO())
+				openGamesCh = s.games.ListenAny(openGames, ctx)
+				newestGame = store.NewGameNotification{} // zero out old struct
+				break
+			}
+			s.handleGameUpdate(conn, openGames[gameIdx].Game)
+			break
+		case newestGame = <-newGameCh:
+			s.handleGameUpdate(conn, newestGame.Game)
+			cancelCtx()
+			break
 		}
 	}
 }
 
-func (s *Server) handleMessage(conn *clientConn, msg interface{}) {
-	switch msg.(type) {
+func (s *Server) handleGameUpdate(conn *clientConn, g *store.Game) {
+	state, err := g.GetGameState(conn.playerID)
+	if err != nil {
+		panic(err)
+	}
+
+	conn.sendMessage(state)
+}
+
+func (s *Server) handleMessage(conn *clientConn, msg interface{}, games []store.NewGameNotification) {
+	switch v := msg.(type) {
+	case *NewGame:
+		s.handleNewGame(conn, v)
+		break
+	case *PlayMove:
+		idx := 0
+		for idx = range games {
+			if games[idx].Game.UUID() == v.GameID {
+				err := games[idx].Game.PlayMove(v.Move)
+				if err != nil {
+					panic(err)
+				}
+			}
+		}
+		break
+	}
+}
+
+func (s *Server) handleNewGame(conn *clientConn, payload *NewGame) {
+	fullplayer, err := s.games.TryLookupPlayerUUID(conn.playerID)
+	if err != nil {
+		panic(err)
+	}
+	err = s.games.NewGameByUsername(fullplayer.Username, payload.Opponent)
+	if err != nil {
+		panic(err)
 	}
 }
 
