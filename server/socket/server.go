@@ -68,13 +68,13 @@ func (s *Server) login(socket *websocket.Conn) (*clientConn, error) {
 		panic("not implemented")
 	}
 
-	conn.playerID = request.PlayerID
-	player, err := s.games.CreatePlayer(conn.playerID, conn.playerID)
+	player, err := s.games.CreatePlayer(request.LoginID, request.LoginID)
 	if err != nil {
 		conn.sendError("invalid login", false)
 		return nil, err
 	}
 
+	conn.playerID = player.UUID
 	conn.sendMessage(LoginSuccess{
 		Username: player.Username,
 		PlayerID: player.UUID,

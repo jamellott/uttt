@@ -5,25 +5,18 @@ class WSMessage {
   }
 }
 
-const MessageType = {
-  LoginRequest: "LoginRequest",
-  LoginSuccess: "LoginSuccess",
-  LoginFailure: "ErrorMessage",
-  ErrorMessage: "ErrorMessage",
-};
-
 function createLoginRequestVerifier(socket, resolve, reject) {
   let handler = (ev) => {
     socket.removeEventListener("message", handler);
     console.log(ev);
     let data = JSON.parse(ev.data);
-    if (data.messageType === MessageType.LoginSuccess) {
+    if (data.messageType === "LoginSuccess") {
       resolve(socket);
-    } else if (data.messageType === MessageType.LoginFailure) {
+    } else if (data.messageType === "LoginFailure") {
       console.error(data.payload.message);
       reject("login failed");
     } else {
-      reject("Unexpected MessageType: " + data.messageType);
+      reject("Unexpected MessageType" + data.messageType);
     }
   };
 
@@ -31,7 +24,7 @@ function createLoginRequestVerifier(socket, resolve, reject) {
 }
 
 function sendLoginRequest(socket, username) {
-  let msg = new WSMessage(MessageType.LoginRequest, {
+  let msg = new WSMessage("LoginRequest", {
     playerID: username,
   });
   socket.send(JSON.stringify(msg));
@@ -62,16 +55,38 @@ const webSocketHandler = {
   },
   handleMessage(msg) {
     switch (msg.type) {
+      case "GameUpdate":
+        this.state.commit("playMove", msg);
+        break;
       default:
         console.error("unknown websocket message type: " + msg.type);
         break;
     }
   },
+  sendMessage(msg) {
+    this.socket.send(msg);
+  },
 };
 
 const store = {
-  state: {},
-  mutations: {},
+  state: {
+    username: "",
+    userID: "",
+    games: [],
+  },
+  mutations: {
+    setUser(state, { username, userID }) {
+      state.username = username;
+      state.userID = userID;
+    },
+    initGammes(state, games) {
+      state.games = games;
+    },
+    gameUpdate(state, game) {
+      let idx = state.games.find((g) => g.id == game.id);
+      state.games[idx] = game;
+    },
+  },
   plugins: [webSocketHandler.installFunc()],
   actions: {
     login(context, username) {
@@ -92,6 +107,10 @@ const store = {
             });
         });
       });
+    },
+    playMove(context, move) {
+      let message = new WSMessage("PlayMove", move);
+      webSocketHandler.sendMessage(message);
     },
   },
 };
