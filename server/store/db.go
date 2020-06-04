@@ -42,8 +42,7 @@ CREATE TABLE IF NOT EXISTS "matches"
 	[LastMoveSubgridY] INTEGER,
 	[Finished] BOOLEAN NOT NULL,
 	FOREIGN KEY (UserX) REFERENCES "users" (PK_UUID),
-	FOREIGN KEY (UserO) REFERENCES "users" (PK_UUID),
-	FOREIGN KEY (Victor) REFERENCES "users" (PK_UUID)
+	FOREIGN KEY (UserO) REFERENCES "users" (PK_UUID)
 );
 `
 
@@ -183,7 +182,7 @@ func (s *Store) saveGame(gameID string, game *game.Game) error {
 			LastMoveSubgridX,
 			LastMoveSubgridY,
 			Finished)
-			VALUES(?,?.?,?,?,?,?,?,?,?);
+			VALUES(?,?,?,?,?,?,?,?,?,?);
 		`,
 		gameID, state, playerX, playerO, victor, lastGameX, lastGameY,
 		lastSubX, lastSubY, finished)

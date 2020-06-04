@@ -20,7 +20,10 @@
             >
           </b-form-group>
           <b-form-group>
-            <b-button :disabled="!validated" variant="primary"
+            <b-button
+              :disabled="!validated"
+              v-on:click="startGame()"
+              variant="primary"
               >Start Game</b-button
             >
           </b-form-group>
@@ -57,6 +60,15 @@ export default {
         ];
         this.isValidating = false;
       });
+    },
+    startGame() {
+      if (!this.validated) {
+        return;
+      }
+
+      this.$store.dispatch("newGame", this.opponentUUID);
+      this.opponentUsername = "";
+      this.opponentUUID = null;
     },
   },
 };

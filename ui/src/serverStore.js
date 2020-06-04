@@ -58,7 +58,7 @@ const webSocketHandler = {
   handleMessage(msg) {
     console.debug(msg);
     switch (msg.messageType) {
-      case "GameUpdate":
+      case "GameState":
         this.store.commit("gameUpdate", msg.payload);
         break;
       case "UserLookup":
@@ -104,8 +104,9 @@ const store = {
       state.games = games;
     },
     gameUpdate(state, game) {
-      let idx = state.games.find((g) => g.id == game.id);
-      if (idx == -1) {
+      let idx = state.games.find((g) => g.gameID == game.gameID);
+      console.debug(idx);
+      if (idx === undefined) {
         state.games.push(game);
       } else {
         state.games[idx] = game;
@@ -146,8 +147,8 @@ const store = {
       let message = new WSMessage("PlayMove", { gameID, move });
       webSocketHandler.sendMessage(message);
     },
-    newGame(context, opponent) {
-      let message = new WSMessage("NewGame", { opponent });
+    newGame(context, opponentID) {
+      let message = new WSMessage("NewGame", { opponentID });
       webSocketHandler.sendMessage(message);
     },
     lookupOpponent(context, opponent) {

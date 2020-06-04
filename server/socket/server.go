@@ -144,7 +144,7 @@ func (s *Server) handleGameUpdate(conn *clientConn, g *store.Game) {
 		panic(err)
 	}
 
-	conn.sendMessage(state)
+	conn.sendMessage(*state)
 }
 
 func (s *Server) handleMessage(conn *clientConn, msg interface{}, games []store.NewGameNotification) {

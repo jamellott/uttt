@@ -103,8 +103,8 @@ func (g *Game) GetGameState(playerID string) (*GameState, error) {
 		gameState.Victor = &victor
 	}
 	// GameCoordinate = {{z, w} {x, y}}
-	for z := 1; z <= 3; z++ {
-		for w := 1; w <= 3; w++ {
+	for z := 0; z <= 2; z++ {
+		for w := 0; w <= 2; w++ {
 			grid := &gameState.Grids[w][z]
 
 			owner, _ := g.underlying.BlockWinner(game.SubCoordinate{z, w})
@@ -113,8 +113,8 @@ func (g *Game) GetGameState(playerID string) (*GameState, error) {
 				grid.Owner = &owner
 			}
 
-			for x := 1; x <= 3; x++ {
-				for y := 1; y <= 3; y++ {
+			for x := 0; x <= 2; x++ {
+				for y := 0; y <= 2; y++ {
 					coord := game.NewCoordinate(x, y, z, w)
 					square := &grid.Squares[y][x]
 					owner, _ := g.underlying.SquareOwner(coord)
