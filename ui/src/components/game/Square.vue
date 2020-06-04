@@ -16,8 +16,21 @@ export default {
     square: Object,
     game: Object,
   },
+  computed: {
+    move() {
+      return {
+        gameID: this.game.gameID,
+        move: {
+          playerID: this.$store.state.playerID,
+          coordinate: this.square.coordinate,
+        },
+      };
+    },
+  },
   methods: {
-    play() {},
+    play() {
+      this.$store.dispatch("playMove", this.move);
+    },
   },
 };
 </script>

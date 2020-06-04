@@ -135,7 +135,13 @@ func (g *Game) PlayMove(m game.Move) error {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 
-	return g.underlying.PlayMove(m)
+	err := g.underlying.PlayMove(m)
+	for _, ch := range g.listenChannels {
+		go func() {
+			ch <- struct{}{}
+		}()
+	}
+	return err
 }
 
 func (g *Game) listenForUpdates() <-chan struct{} {

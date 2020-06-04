@@ -87,6 +87,8 @@ func valueFromType(typ string) interface{} {
 		return &NewGame{}
 	case "UserLookup":
 		return &UserLookup{}
+	case "PlayMove":
+		return &PlayMove{}
 	}
 
 	return nil
