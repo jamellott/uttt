@@ -272,17 +272,8 @@ func (s *GameService) CloseNewGameCh(playerID string) {
 	delete(s.players, playerID)
 }
 
-func (s *GameService) NewGameByUsername(playerX string, playerO string) error {
-	playerXFull, err := s.TryLookupPlayerUsername(playerX)
-	if err != nil {
-		return err
-	}
-	playerOFull, err := s.TryLookupPlayerUsername(playerO)
-	if err != nil {
-		return err
-	}
-
-	g, err := game.NewGame(playerXFull.UUID, playerOFull.UUID)
+func (s *GameService) NewGame(playerX string, playerO string) error {
+	g, err := game.NewGame(playerX, playerO)
 	if err != nil {
 		return err
 	}
@@ -309,14 +300,14 @@ func (s *GameService) NewGameByUsername(playerX string, playerO string) error {
 	defer s.mutex.Unlock()
 	s.games[uuid] = loaded
 
-	updateCh, ok := s.players[playerXFull.UUID]
+	updateCh, ok := s.players[playerX]
 	if ok {
 		go func() {
 			updateCh <- NewGameNotification{loaded.game, loaded.game.listenForUpdates()}
 		}()
 	}
 
-	updateCh, ok = s.players[playerOFull.UUID]
+	updateCh, ok = s.players[playerO]
 	if ok {
 		go func() {
 			updateCh <- NewGameNotification{loaded.game, loaded.game.listenForUpdates()}

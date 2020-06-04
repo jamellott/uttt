@@ -36,6 +36,8 @@ function sendLoginRequest(socket, username) {
 const webSocketHandler = {
   socket: null,
   store: null,
+  openRequests: {},
+  requestCounter: 1,
   installFunc() {
     let handler = this;
     return (store) => {
@@ -50,30 +52,48 @@ const webSocketHandler = {
     this.socket = socket;
     let handler = this;
     socket.addEventListener("message", (ev) => {
-      handler.handleMessage(ev.data);
+      handler.handleMessage(JSON.parse(ev.data));
     });
   },
   handleMessage(msg) {
     console.debug(msg);
-    switch (msg.type) {
+    switch (msg.messageType) {
       case "GameUpdate":
-        this.state.commit("gameUpdate", msg);
+        this.store.commit("gameUpdate", msg.payload);
+        break;
+      case "UserLookup":
+        this.store.commit("addLookupResult", msg.payload);
         break;
       default:
-        console.error("unknown websocket message type: " + msg.type);
+        console.error("unknown websocket message type: " + msg.messageType);
         break;
+    }
+    let id = msg.requestID.toString();
+    if (this.openRequests[id] != undefined) {
+      this.openRequests[id]();
+      this.openRequests[id] = undefined;
     }
   },
   sendMessage(msg) {
-    this.socket.send(msg);
+    this.sendMessagePromise(msg);
+  },
+  sendMessagePromise(msg) {
+    msg.requestID = this.requestCounter++;
+    console.debug(msg);
+    return new Promise((resolve) => {
+      this.openRequests[msg.requestID.toString()] = resolve;
+      this.socket.send(JSON.stringify(msg));
+    });
   },
 };
 
 const store = {
   state: {
     username: null,
-    playerID: "",
+    playerID: null,
     games: [],
+    usernameMap: {},
+    playerIDMap: {},
   },
   mutations: {
     setUser(state, { username, playerID }) {
@@ -90,6 +110,14 @@ const store = {
       } else {
         state.games[idx] = game;
       }
+    },
+    addLookupResult(state, result) {
+      let usernameMap = state.usernameMap;
+      let playerIDMap = state.playerIDMap;
+      usernameMap[result.username] = result.playerID;
+      playerIDMap[result.playerID] = result.username;
+      state.usernameMap = usernameMap;
+      state.playerIDMap = playerIDMap;
     },
   },
   plugins: [webSocketHandler.installFunc()],
@@ -123,8 +151,8 @@ const store = {
       webSocketHandler.sendMessage(message);
     },
     lookupOpponent(context, opponent) {
-      let message = new WSMessage("LookupByUsername", { username: opponent });
-      webSocketHandler.sendMessage(message);
+      let message = new WSMessage("UserLookup", { username: opponent });
+      return webSocketHandler.sendMessagePromise(message); // TODO: set up better promise mechanism
     },
   },
   // getters: {

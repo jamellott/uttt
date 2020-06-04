@@ -9,11 +9,12 @@
               v-model="opponentUsername"
               :state="validated"
               required
+              v-on:change="validateOpponent()"
             >
             </b-form-input>
-            <b-form-text v-if="isValidating"
+            <!--<b-form-text v-if="isValidating"
               >Checking that user exists...</b-form-text
-            >
+            >-->
             <b-form-invalid-feedback :state="!invalidated"
               >User does not exist.</b-form-invalid-feedback
             >
@@ -41,22 +42,21 @@ export default {
   },
   computed: {
     validated() {
-      return !this.isValidating && this.opponentUUID !== null;
+      return !this.isValidating && this.opponentUUID != null;
     },
     invalidated() {
-      return !this.isValidating && this.opponentUUID === null;
+      return !this.isValidating && this.opponentUUID == null;
     },
   },
   methods: {
     validateOpponent() {
       this.isValidating = true;
-      this.$store
-        .dispatch("lookupOpponent", this.opponentUsername)
-        .then((uuid) => {
-          this.opponentUUID = uuid;
-          this.isValidating = false;
-        })
-        .catch((err) => console.error(err));
+      this.$store.dispatch("lookupOpponent", this.opponentUsername).then(() => {
+        this.opponentUUID = this.$store.state.usernameMap[
+          this.opponentUsername
+        ];
+        this.isValidating = false;
+      });
     },
   },
 };

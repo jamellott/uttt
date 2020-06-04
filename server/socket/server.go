@@ -163,15 +163,40 @@ func (s *Server) handleMessage(conn *clientConn, msg interface{}, games []store.
 			}
 		}
 		break
+	case *UserLookup:
+		username := v.Username
+		playerID := v.PlayerID
+		if username != "" {
+			s.handleLookupByUsername(conn, username)
+		} else if playerID != "" {
+			panic("not impl")
+		} else {
+			conn.sendError("Must specify either username or playerID", true)
+		}
+
+	default:
+		fmt.Printf("Unknown message type %+v\n", msg)
+	}
+}
+
+func (s *Server) handleLookupByUsername(conn *clientConn, username string) {
+	fullplayer, err := s.games.TryLookupPlayerUsername(username)
+	if err != nil {
+		conn.sendError("Could not lookup user", true)
+		return
+	}
+
+	err = conn.sendMessage(UserLookup{
+		Username: fullplayer.Username,
+		PlayerID: fullplayer.UUID,
+	})
+	if err != nil {
+		panic(err)
 	}
 }
 
 func (s *Server) handleNewGame(conn *clientConn, payload *NewGame) {
-	fullplayer, err := s.games.TryLookupPlayerUUID(conn.playerID)
-	if err != nil {
-		panic(err)
-	}
-	err = s.games.NewGameByUsername(fullplayer.Username, payload.Opponent)
+	err := s.games.NewGame(conn.playerID, payload.OpponentID)
 	if err != nil {
 		panic(err)
 	}

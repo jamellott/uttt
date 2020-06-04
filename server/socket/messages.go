@@ -8,13 +8,15 @@ import (
 )
 
 type IncomingSocketMessage struct {
-	Type    string          `json:"messageType"`
-	Payload json.RawMessage `json:"payload"`
+	Type      string          `json:"messageType"`
+	Payload   json.RawMessage `json:"payload"`
+	RequestID int             `json:"requestID"`
 }
 
 type OutgoingSocketMessage struct {
-	Type    string      `json:"messageType"`
-	Payload interface{} `json:"payload"`
+	Type      string      `json:"messageType"`
+	Payload   interface{} `json:"payload"`
+	RequestID int         `json:"requestID"`
 }
 
 type LoginRequest struct {
@@ -22,7 +24,7 @@ type LoginRequest struct {
 }
 
 type NewGame struct {
-	Opponent string `json:"opponent"`
+	OpponentID string `json:"opponentID"`
 }
 
 type PlayMove struct {
@@ -34,6 +36,11 @@ type LoginSuccess struct {
 	Username string            `json:"username"`
 	PlayerID string            `json:"playerID"`
 	Games    []store.GameState `json:"games"`
+}
+
+type UserLookup struct {
+	Username string `json:"username"`
+	PlayerID string `json:"playerID"`
 }
 
 type ErrorMessage struct {

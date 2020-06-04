@@ -18,6 +18,8 @@ type clientConn struct {
 	playerID  string
 	openGames []store.NewGameNotification
 	cancelCtx func()
+	// todo: fix request id responses on server end
+	currRequestID int
 }
 
 func (conn *clientConn) malformedRequest() error {
@@ -41,17 +43,18 @@ func (conn *clientConn) nextMessageSync() (interface{}, error) {
 		return nil, err
 	}
 
-	return parseMessage(reader)
+	return conn.parseMessage(reader)
 }
 
 func (conn *clientConn) sendMessage(payload interface{}) error {
 	return conn.socket.WriteJSON(OutgoingSocketMessage{
-		Type:    reflect.TypeOf(payload).Name(),
-		Payload: payload,
+		Type:      reflect.TypeOf(payload).Name(),
+		Payload:   payload,
+		RequestID: conn.currRequestID,
 	})
 }
 
-func parseMessage(r io.Reader) (interface{}, error) {
+func (conn *clientConn) parseMessage(r io.Reader) (interface{}, error) {
 	decoder := json.NewDecoder(r)
 	decoder.DisallowUnknownFields()
 
@@ -61,6 +64,7 @@ func parseMessage(r io.Reader) (interface{}, error) {
 		// TODO: log this
 		return nil, errMalformedRequest
 	}
+	conn.currRequestID = message.RequestID
 
 	decodedMessage := valueFromType(message.Type)
 	if decodedMessage == nil {
@@ -79,6 +83,10 @@ func valueFromType(typ string) interface{} {
 	switch typ {
 	case "LoginRequest":
 		return &LoginRequest{}
+	case "NewGame":
+		return &NewGame{}
+	case "UserLookup":
+		return &UserLookup{}
 	}
 
 	return nil
