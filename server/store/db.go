@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
 
@@ -75,6 +76,7 @@ func (s *Store) TryLookupPlayer(googleID string) (*Player, error) {
 	} else if err != nil {
 		return nil, err
 	}
+	fmt.Println("logging in " + id + " " + username)
 
 	return &Player{
 		UUID:     id,

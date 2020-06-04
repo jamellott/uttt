@@ -1,21 +1,23 @@
 <template>
-  <div class="profile-display"></div>
+  <div class="profile-display">
+    {{ username }}
+  </div>
 </template>
 
 <script>
 export default {
   name: "ProfileDisplay",
-  data() {
-    return {
-      username: "",
-    };
-  },
   methods: {
     login: function() {
       this.$store
         .dispatch("login", this.username)
         .then(() => console.log("connection succeeded"))
         .catch((ex) => console.error(ex));
+    },
+  },
+  computed: {
+    username() {
+      return this.$store.state.username;
     },
   },
 };

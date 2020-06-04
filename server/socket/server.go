@@ -64,11 +64,13 @@ func (s *Server) login(socket *websocket.Conn) (*clientConn, error) {
 		return nil, fmt.Errorf("wrong type recieved: %#v", req)
 	}
 
+	loginID := request.LoginID
+
 	if s.config.VerifyUser {
 		panic("not implemented")
 	}
 
-	player, err := s.games.CreatePlayer(request.LoginID, request.LoginID)
+	player, err := s.games.CreatePlayer(loginID, loginID)
 	if err != nil {
 		conn.sendError("invalid login", false)
 		return nil, err
@@ -110,15 +112,16 @@ func (s *Server) handleMessage(conn *clientConn, msg interface{}) {
 func (s *Server) listenForMessages(conn *clientConn) <-chan interface{} {
 	ch := make(chan interface{})
 	go func() {
+		defer recover() // TODO: Log errored socket
+		defer close(ch)
 		for {
 			msg, err := conn.nextMessageSync()
-			if err == nil {
-				break
+			if err != nil {
+				break // TODO: Log errored socket
 			}
 
 			ch <- msg
 		}
-		close(ch)
 	}()
 	return ch
 }

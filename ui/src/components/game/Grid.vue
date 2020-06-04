@@ -1,13 +1,23 @@
 <template>
   <div class="container">
-    <div v-for="rowIdx in range" :class="`row game-row-${rowIdx + 1}`">
-      <div v-for="colIdx in range" :class="`col-4 game-col-${colIdx + 1}`">
+    <div
+      v-for="rowIdx in range"
+      :key="rowIdx"
+      :class="`row game-row-${rowIdx + 1}`"
+    >
+      <div
+        v-for="colIdx in range"
+        :key="colIdx"
+        :class="`col-4 game-col-${colIdx + 1}`"
+      >
         <div
           v-for="subRowIdx in range"
+          :key="subRowIdx"
           :class="`row game-row-${subRowIdx + 1}`"
         >
           <div
             v-for="subColIdx in range"
+            :key="subColIdx"
             :class="`col-4 game-col-${subColIdx + 1}`"
           >
             <square

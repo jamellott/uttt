@@ -11,7 +11,7 @@ function createLoginRequestVerifier(socket, resolve, reject) {
     console.log(ev);
     let data = JSON.parse(ev.data);
     if (data.messageType === "LoginSuccess") {
-      resolve(socket);
+      resolve({ payload: data.payload, socket });
     } else if (data.messageType === "LoginFailure") {
       console.error(data.payload.message);
       reject("login failed");
@@ -25,7 +25,7 @@ function createLoginRequestVerifier(socket, resolve, reject) {
 
 function sendLoginRequest(socket, username) {
   let msg = new WSMessage("LoginRequest", {
-    playerID: username,
+    loginID: username,
   });
   socket.send(JSON.stringify(msg));
   return new Promise((resolve, reject) => {
@@ -71,15 +71,15 @@ const webSocketHandler = {
 const store = {
   state: {
     username: "",
-    userID: "",
+    playerID: "",
     games: [],
   },
   mutations: {
-    setUser(state, { username, userID }) {
+    setUser(state, { username, playerID }) {
       state.username = username;
-      state.userID = userID;
+      state.playerID = playerID;
     },
-    initGammes(state, games) {
+    initGames(state, games) {
       state.games = games;
     },
     gameUpdate(state, game) {
@@ -96,9 +96,10 @@ const store = {
       return new Promise((resolve, reject) => {
         socket.addEventListener("open", () => {
           sendLoginRequest(socket, username)
-            .then((socket) => {
+            .then(({ payload, socket }) => {
               console.log("successful connection");
               webSocketHandler.setSocket(socket);
+              context.commit("setUser", payload);
               resolve();
             })
             .catch((reason) => {
@@ -113,6 +114,11 @@ const store = {
       webSocketHandler.sendMessage(message);
     },
   },
+  // getters: {
+  //   getUsername(state) {
+  //     return state.username;
+  //   },
+  // },
 };
 
 export default store;

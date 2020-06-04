@@ -17,7 +17,10 @@ export default {
     login: function() {
       this.$store
         .dispatch("login", this.username)
-        .then(() => console.log("connection succeeded"))
+        .then(() => {
+          console.log("connection succeeded");
+          this.$router.push("/app");
+        })
         .catch((ex) => console.error(ex));
     },
   },

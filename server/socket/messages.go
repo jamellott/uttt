@@ -17,8 +17,7 @@ type OutgoingSocketMessage struct {
 }
 
 type LoginRequest struct {
-	LoginID       string `json:"loginID"`
-	Authorization string `json:"authorization"`
+	LoginID string `json:"loginID"`
 }
 
 type NewGame struct {
