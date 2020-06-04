@@ -3,8 +3,8 @@
     <div v-if="square.playable" v-on:click="play()" class="square playable" />
 
     <!--TODO: Add icons-->
-    <div v-else-if="square.owner == game.playerX" class="player-x"></div>
-    <div v-else-if="square.owner == game.playerO" class="player-o"></div>
+    <div v-else-if="square.owner == game.playerX" class="square player-x"></div>
+    <div v-else-if="square.owner == game.playerO" class="square player-o"></div>
     <div v-else class="empty"></div>
   </div>
 </template>
