@@ -7,8 +7,6 @@ export { default as Square } from "./game/Square.vue";
 
 export { default as NewGameMenu } from "./newgame/NewGameMenu.vue";
 
-export { default as GameListItem } from "./sidebar/GameListItem.vue";
-export { default as NewGameButton } from "./sidebar/NewGameButton.vue";
 export { default as ProfileDisplay } from "./sidebar/ProfileDisplay.vue";
 
 export { default as Main } from "../Main.vue";
