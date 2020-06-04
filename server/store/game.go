@@ -65,8 +65,8 @@ type GameState struct {
 	PlayerX string `json:"playerX"`
 	PlayerO string `json:"playerO"`
 
-	PlayerXName string `json:playerXName"`
-	PlayerOName string `json:playerOName"`
+	PlayerXName string `json:"playerXName"`
+	PlayerOName string `json:"playerOName"`
 
 	Victor *string         `json:"victor"`
 	Grids  [3][3]GridState `json:"grids"`

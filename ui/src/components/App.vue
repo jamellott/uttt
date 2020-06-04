@@ -3,9 +3,14 @@
     <div class="col-md-4 col-12 sidebar">
       <ul class="border border-secondary">
         <li class="border border-secondary rounded"><profile-display /></li>
-        <li v-for="game in games" :key="game.id">
-          <game-list-item />
-        </li>
+        <router-link
+          v-for="game in games"
+          :to="'/app/game/' + game.gameID"
+          :key="game.gameID"
+          ><li class="border border-primary rounded">
+            vs {{ getOpponent(game.gameID) }}
+          </li></router-link
+        >
         <router-link to="/app/new"
           ><li class="border border-primary rounded">
             + New Game
@@ -20,13 +25,11 @@
 </template>
 
 <script>
-import GameListItem from "./sidebar/GameListItem.vue";
 import ProfileDisplay from "./sidebar/ProfileDisplay.vue";
 
 export default {
   name: "App",
   components: {
-    GameListItem,
     ProfileDisplay,
   },
   data() {
@@ -39,7 +42,18 @@ export default {
       return this.$store.state.games;
     },
   },
-  methods: {},
+  methods: {
+    getOpponent(id) {
+      let game = this.games[this.games.find((g) => g.gameID == id)];
+
+      if (game == undefined) return "error";
+      if (game.playerX == this.$store.state.playerID) {
+        return game.playerOName;
+      }
+
+      return game.playerXName;
+    },
+  },
   mounted() {
     if (this.$store.state.username === null) {
       this.$router.push("/login");

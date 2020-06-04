@@ -111,6 +111,8 @@ const store = {
       } else {
         state.games[idx] = game;
       }
+      let swp = state.games;
+      state.games = swp;
     },
     addLookupResult(state, result) {
       let usernameMap = state.usernameMap;
