@@ -186,6 +186,11 @@ func (s *Server) handleLookupByUsername(conn *clientConn, username string) {
 		return
 	}
 
+	if fullplayer == nil {
+		conn.sendError("User does not exist", true)
+		return
+	}
+
 	err = conn.sendMessage(UserLookup{
 		Username: fullplayer.Username,
 		PlayerID: fullplayer.UUID,

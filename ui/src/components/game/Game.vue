@@ -1,6 +1,10 @@
 <template>
   <div class="game">
-    <div>Game {{ gameID }} vs {{ getOpponent(game) }}</div>
+    <div>Game ID: {{ gameID }}</div>
+    <h2>
+      <span :class="youClass">You</span> vs
+      <span :class="oppClass">{{ getOpponent(game) }}</span>
+    </h2>
     <div>
       <grid :game="game"></grid>
     </div>
@@ -24,6 +28,18 @@ export default {
   computed: {
     game() {
       return this.$store.state.games[this.gameID];
+    },
+    youClass() {
+      if (this.$store.playerID == this.game.playerX) {
+        return "player-x";
+      }
+      return "player-o";
+    },
+    oppClass() {
+      if (this.$store.playerID == this.game.playerX) {
+        return "player-o";
+      }
+      return "player-x";
     },
   },
   methods: {
@@ -53,5 +69,19 @@ li {
 }
 a {
   color: #42b983;
+}
+
+h2 {
+  padding: 4px;
+}
+h2 span {
+  padding: 4px;
+}
+.player-o {
+  background-color: lightskyblue;
+}
+
+.player-x {
+  background-color: lightcoral;
 }
 </style>

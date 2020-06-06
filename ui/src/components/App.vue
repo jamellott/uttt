@@ -1,24 +1,33 @@
 <template>
   <div class="row w-100 h-100">
-    <div class="col-md-4 col-12 sidebar">
-      <ul class="border border-secondary">
-        <li class="border border-secondary rounded"><profile-display /></li>
-        <router-link
-          v-for="game in games"
-          :to="'/app/game/' + game.gameID"
-          :key="game.gameID"
-          ><li class="border border-primary rounded">
-            vs {{ getOpponent(game) }}
-          </li></router-link
-        >
-        <router-link to="/app/new"
-          ><li class="border border-primary rounded">
-            + New Game
-          </li></router-link
-        >
+    <nav class="col-md-4 col-12 sidebar">
+      <ul class="border border-secondary font-weight-bold">
+        <li>
+          <div class="sidebar-item border border-secondary rounded">
+            <profile-display />
+          </div>
+        </li>
+        <li v-for="game in games" :key="game.gameID">
+          <router-link :to="'/app/game/' + game.gameID">
+            <div class="sidebar-item border border-primary rounded">
+              <span class="sidebar-text"> vs {{ getOpponent(game) }}</span>
+            </div>
+          </router-link>
+        </li>
+
+        <li>
+          <router-link to="/app/new">
+            <div
+              class="sidebar-item border border-primary rounded sidebar-text"
+            >
+              + New Game
+            </div>
+          </router-link>
+        </li>
       </ul>
-    </div>
-    <div class="col-12 col-md-8">
+    </nav>
+    <div class="mt-5 col-12 col-md-8">
+      <h1>Ultimate Tic Tac Toe</h1>
       <router-view></router-view>
     </div>
   </div>
@@ -67,9 +76,16 @@ export default {
   height: 100%;
 }
 .sidebar li {
-  padding: 20px;
   margin: 20px;
   width: 80%-20px;
   min-height: 80px;
+}
+.sidebar-item {
+  padding: 20px;
+  width: 100%;
+  height: 100%;
+}
+.sidebar-text {
+  color: blue;
 }
 </style>

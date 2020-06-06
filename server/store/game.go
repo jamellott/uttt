@@ -365,6 +365,5 @@ func (s *GameService) periodicFlushToDB(g *Game) {
 		}
 
 		g.mutex.RUnlock()
-
 	}
 }

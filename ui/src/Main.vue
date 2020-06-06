@@ -1,7 +1,7 @@
 <template>
-  <div class="container w-100 h-100 p-0 m-0">
+  <main class="container w-100 h-100 p-0 m-0">
     <router-view></router-view>
-  </div>
+  </main>
 </template>
 
 <script>

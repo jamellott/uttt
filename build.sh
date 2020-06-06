@@ -1,6 +1,5 @@
 #!/bin/sh
 
-rm -rf dist/
 mkdir -p dist
 
 set -e

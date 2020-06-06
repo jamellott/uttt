@@ -1,10 +1,24 @@
 <template>
   <div class="square">
-    <div v-if="square.playable" v-on:click="play()" class="square playable" />
+    <div
+      v-if="square.playable"
+      v-on:click="play()"
+      class="text-center square playable"
+    />
 
     <!--TODO: Add icons-->
-    <div v-else-if="square.owner == game.playerX" class="square player-x"></div>
-    <div v-else-if="square.owner == game.playerO" class="square player-o"></div>
+    <div
+      v-else-if="square.owner == game.playerX"
+      class="text-center square player-x"
+    >
+      X
+    </div>
+    <div
+      v-else-if="square.owner == game.playerO"
+      class="text-center square player-o"
+    >
+      O
+    </div>
     <div v-else class="empty"></div>
   </div>
 </template>
@@ -42,15 +56,16 @@ export default {
 }
 
 .player-x {
-  background-color: red;
+  background-color: lightcoral;
 }
 
 .player-o {
-  background-color: blue;
+  background-color: lightskyblue;
 }
 
 .square {
   width: 100%;
   height: 100%;
+  font-size: x-large;
 }
 </style>
