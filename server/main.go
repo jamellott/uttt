@@ -10,6 +10,7 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/heartles/uttt/server/config"
 	"github.com/heartles/uttt/server/socket"
@@ -41,12 +42,19 @@ func main() {
 	}
 
 	server := buildServer(cfg)
-	listenAddress := fmt.Sprintf("%v:%v", cfg.Host, strconv.Itoa(cfg.Port))
+	listenAddress := fmt.Sprintf(":%v", strconv.Itoa(cfg.Port))
+	fmt.Printf("Listening on %v\n", listenAddress)
 	if cfg.AcmeTLS {
-		server.StartAutoTLS(listenAddress)
+		server.AutoTLSManager.HostPolicy = autocert.HostWhitelist("uttt.heartles.io")
+		server.AutoTLSManager.Cache = autocert.DirCache("/var/www/.cache")
+
+		go server.Logger.Fatal(server.StartAutoTLS(listenAddress))
+
 	} else {
-		server.Start(listenAddress)
+		go server.Logger.Fatal(server.Start(listenAddress))
 	}
+
+	<-make(chan struct{})
 }
 
 // buildServer constructs an echo instance with the routes setup

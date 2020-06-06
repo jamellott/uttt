@@ -2,8 +2,8 @@
   <div class="game">
     <div>Game ID: {{ gameID }}</div>
     <h2>
-      <span :class="youClass">You</span> vs
-      <span :class="oppClass">{{ getOpponent(game) }}</span>
+      <span :class="classForID(playerID)">You</span> vs
+      <span :class="classForID(opponentID)">{{ nameForID(opponentID) }}</span>
     </h2>
     <div>
       <grid :game="game"></grid>
@@ -20,35 +20,33 @@ export default {
   components: {
     Grid,
   },
-  data() {
-    return {
-      username: "",
-    };
-  },
   computed: {
     game() {
       return this.$store.state.games[this.gameID];
     },
-    youClass() {
-      if (this.$store.playerID == this.game.playerX) {
-        return "player-x";
-      }
-      return "player-o";
+    playerID() {
+      return this.$store.state.playerID;
     },
-    oppClass() {
-      if (this.$store.playerID == this.game.playerX) {
-        return "player-o";
+    opponentID() {
+      if (this.game.playerX == this.playerID) {
+        return this.game.playerO;
       }
-      return "player-x";
+
+      return this.game.playerX;
     },
   },
   methods: {
-    getOpponent(game) {
-      if (game.playerX == this.$store.state.playerID) {
-        return game.playerOName;
+    nameForID(id) {
+      if (this.game.playerX == id) {
+        return this.game.playerXName;
       }
-
-      return game.playerXName;
+      return this.game.playerOName;
+    },
+    classForID(id) {
+      if (id == this.game.playerX) {
+        return "player-x";
+      }
+      return "player-o";
     },
   },
 };

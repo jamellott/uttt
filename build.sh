@@ -1,5 +1,6 @@
 #!/bin/sh
 
+rm -rf dist
 mkdir -p dist
 
 set -e
@@ -10,9 +11,17 @@ go build -o ../dist/server
 
 echo "Building UI..."
 cd ../ui
-npm run build
+NODE_ENV=production npm run build
 
 echo "Copying files..."
 cp -R dist/ ../dist/ui
+
+cat <<EOF > ../dist/config.yaml
+port: 80
+host:
+acmetls: false
+requestlogs: false
+checkorigin: true
+EOF
 
 echo "Done"
